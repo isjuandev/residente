@@ -16,7 +16,6 @@ test-results
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
-pubspec.lock
 apps/mobile/android/local.properties
 apps/mobile/ios/Flutter/Generated.xcconfig
 apps/mobile/ios/Flutter/flutter_export_environment.sh
