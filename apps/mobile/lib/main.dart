@@ -37,7 +37,7 @@ Future<void> main() async {
           ) ??
           0.1;
       options.beforeSend = (event, hint) {
-        final exception = hint?.exception;
+        final exception = event.throwable;
         if (exception is ApiException &&
             exception.statusCode != null &&
             exception.statusCode! < 500) {

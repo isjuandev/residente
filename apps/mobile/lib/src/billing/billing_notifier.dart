@@ -38,7 +38,7 @@ class BillingState {
 class BillingNotifier extends StateNotifier<BillingState> {
   BillingNotifier(this._repository) : super(const BillingState()) {
     _subscription = _repository.purchaseStream.listen(_handlePurchases);
-    refresh();
+    unawaited(refresh());
   }
 
   final BillingRepository _repository;

@@ -30,9 +30,7 @@ class DiseaseDetailScreen extends ConsumerWidget {
       ),
       body: detail.when(
         data: (disease) => RefreshIndicator(
-          onRefresh: () async {
-            await ref.refresh(diseaseDetailProvider(slug).future);
-          },
+          onRefresh: () => ref.refresh(diseaseDetailProvider(slug).future),
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [

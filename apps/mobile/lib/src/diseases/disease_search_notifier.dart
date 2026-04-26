@@ -46,7 +46,7 @@ class DiseaseSearchState {
 
 class DiseaseSearchNotifier extends StateNotifier<DiseaseSearchState> {
   DiseaseSearchNotifier(this._repository) : super(const DiseaseSearchState()) {
-    refresh();
+    unawaited(refresh());
   }
 
   final DiseasesRepository _repository;
@@ -85,7 +85,7 @@ class DiseaseSearchNotifier extends StateNotifier<DiseaseSearchState> {
       clearSpecialty: slug == null || slug.isEmpty,
       clearError: true,
     );
-    refresh();
+    unawaited(refresh());
   }
 
   @override
