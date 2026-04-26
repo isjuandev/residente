@@ -167,7 +167,7 @@ class ApiClient {
         scope.setTag('http.status_code', '$statusCode');
         scope.setTag('http.method', error.requestOptions.method);
         scope.setTag('http.path', error.requestOptions.path);
-        scope.setContext('http.response', {
+        scope.setContexts('http.response', {
           'statusCode': statusCode,
           'baseUrl': error.requestOptions.baseUrl,
         });
