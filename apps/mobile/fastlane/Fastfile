@@ -1,0 +1,69 @@
+default_platform(:android)
+
+platform :android do
+  desc "Build Android App Bundle for Play Store"
+  lane :build_release do
+    sh("flutter pub get")
+    sh("flutter build appbundle --release --build-name #{ENV.fetch('BUILD_NAME', '0.1.0')} --build-number #{ENV.fetch('BUILD_NUMBER', '1')} --dart-define=API_URL=#{ENV.fetch('MOBILE_API_URL')} --dart-define=SENTRY_DSN=#{ENV.fetch('MOBILE_SENTRY_DSN', '')} --dart-define=SENTRY_ENVIRONMENT=#{ENV.fetch('MOBILE_SENTRY_ENVIRONMENT', 'production')} --dart-define=SENTRY_RELEASE=residente-mobile@#{ENV.fetch('BUILD_NAME', '0.1.0')}")
+  end
+
+  desc "Upload Android release to internal testing"
+  lane :internal do
+    build_release
+    upload_to_play_store(
+      track: "internal",
+      aab: "build/app/outputs/bundle/release/app-release.aab",
+      release_status: "draft",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Promote Android release to production"
+  lane :production do
+    upload_to_play_store(
+      track: "production",
+      aab: "build/app/outputs/bundle/release/app-release.aab",
+      release_status: "completed"
+    )
+  end
+end
+
+platform :ios do
+  private_lane :connect_api_key do
+    app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_API_ISSUER_ID"),
+      key_content: ENV.fetch("APP_STORE_CONNECT_API_KEY_CONTENT"),
+      is_key_content_base64: true
+    )
+  end
+
+  desc "Build iOS archive for App Store"
+  lane :build_release do
+    sh("flutter pub get")
+    sh("flutter build ipa --release --build-name #{ENV.fetch('BUILD_NAME', '0.1.0')} --build-number #{ENV.fetch('BUILD_NUMBER', '1')} --export-options-plist=ios/ExportOptions.plist --dart-define=API_URL=#{ENV.fetch('MOBILE_API_URL')} --dart-define=SENTRY_DSN=#{ENV.fetch('MOBILE_SENTRY_DSN', '')} --dart-define=SENTRY_ENVIRONMENT=#{ENV.fetch('MOBILE_SENTRY_ENVIRONMENT', 'production')} --dart-define=SENTRY_RELEASE=residente-mobile@#{ENV.fetch('BUILD_NAME', '0.1.0')}")
+  end
+
+  desc "Upload iOS release to TestFlight"
+  lane :testflight do
+    build_release
+    upload_to_testflight(
+      api_key: connect_api_key,
+      ipa: "build/ios/ipa/residente_mobile.ipa",
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Upload iOS release to App Store Connect"
+  lane :app_store do
+    build_release
+    deliver(
+      api_key: connect_api_key,
+      ipa: "build/ios/ipa/residente_mobile.ipa",
+      submit_for_review: false,
+      automatic_release: false
+    )
+  end
+end

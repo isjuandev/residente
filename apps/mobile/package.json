@@ -1,0 +1,11 @@
+{
+  "name": "@residente/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "flutter pub get && flutter build bundle",
+    "dev": "flutter run",
+    "lint": "flutter pub get && flutter analyze",
+    "test": "flutter pub get && flutter test"
+  }
+}

@@ -1,0 +1,14 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @residente/backend prisma:generate && pnpm --filter @residente/backend build"
+
+[deploy]
+startCommand = "pnpm --filter @residente/backend prisma:deploy && pnpm --filter @residente/backend start:prod"
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[environments.production.variables]
+NODE_ENV = "production"
+API_PREFIX = "api"

@@ -1,0 +1,104 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-backend:
+    name: Deploy backend to Railway
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build backend
+        run: pnpm --filter @residente/backend build
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy Railway service
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service "${{ secrets.RAILWAY_SERVICE }}" --detach
+
+      - name: Smoke backend health
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "${{ secrets.PRODUCTION_BACKEND_URL }}/health"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Backend health check failed"
+          exit 1
+
+  deploy-web:
+    name: Deploy frontend to Vercel
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - deploy-backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web
+        run: pnpm --filter @residente/web build
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.PRODUCTION_WEB_URL }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.PRODUCTION_BACKEND_URL }}
+          API_URL: ${{ secrets.PRODUCTION_BACKEND_URL }}
+
+      - name: Deploy Vercel project
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--prod"
+          working-directory: apps/web
+
+      - name: Smoke frontend
+        run: |
+          curl -fsS "${{ secrets.PRODUCTION_WEB_URL }}" >/dev/null
+          curl -fsS "${{ secrets.PRODUCTION_WEB_URL }}/robots.txt" >/dev/null
+          curl -fsS "${{ secrets.PRODUCTION_WEB_URL }}/sitemap.xml" >/dev/null

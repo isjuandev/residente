@@ -1,0 +1,2 @@
+-keep class io.sentry.** { *; }
+-keep class com.google.android.play.core.** { *; }

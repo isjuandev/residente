@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  INACTIVE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum FeedbackRating {
+  USEFUL
+  NOT_USEFUL
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+  WEB
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(STUDENT)
+  favorites    Favorite[]
+  mediaFiles   MediaFile[] @relation("UploadedMediaFiles")
+  refreshTokens RefreshToken[]
+  subscription  Subscription?
+  payments      Payment[]
+  algorithmFeedback AlgorithmFeedback[]
+  algorithmReports  AlgorithmReport[]
+  devices      UserDevice[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model UserDevice {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String         @unique
+  platform  DevicePlatform
+  userAgent String?
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([platform])
+  @@index([isActive])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 Plan               @default(FREE)
+  status               SubscriptionStatus @default(INACTIVE)
+  provider             String?
+  providerCustomerId   String?
+  providerSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([plan])
+  @@index([status])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider    String
+  providerId  String   @unique
+  status      String
+  amountCents Int?
+  currency    String?
+  raw         Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([provider])
+  @@index([status])
+}
+
+model RefreshToken {
+  id        String    @id
+  tokenHash String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Specialty {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  icon     String
+  order    Int       @default(0)
+  diseases Disease[]
+
+  @@index([name])
+  @@index([order])
+}
+
+model Disease {
+  id                    String     @id @default(cuid())
+  name                  String
+  slug                  String     @unique
+  description           String
+  specialtyId           String
+  specialty             Specialty  @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  clinicalPresentations String[]
+  isPublished           Boolean    @default(false)
+  algorithms            Algorithm[]
+  favorites             Favorite[]
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  @@index([name])
+  @@index([clinicalPresentations], type: Gin)
+  @@index([specialtyId])
+}
+
+model Algorithm {
+  id           String   @id @default(cuid())
+  diseaseId    String
+  disease      Disease  @relation(fields: [diseaseId], references: [id], onDelete: Cascade)
+  flowchartUrl String
+  steps        Json
+  tables       Json
+  references   String[]
+  version      String
+  feedback     AlgorithmFeedback[]
+  reports      AlgorithmReport[]
+  updatedAt    DateTime @updatedAt
+
+  @@index([diseaseId])
+  @@unique([diseaseId, version])
+}
+
+model AlgorithmFeedback {
+  id          String         @id @default(cuid())
+  algorithmId String
+  algorithm   Algorithm      @relation(fields: [algorithmId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  rating      FeedbackRating
+  reasons     String[]
+  comment     String?
+  createdAt   DateTime       @default(now())
+
+  @@index([algorithmId])
+  @@index([userId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model AlgorithmReport {
+  id          String       @id @default(cuid())
+  algorithmId String
+  algorithm   Algorithm    @relation(fields: [algorithmId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reason      String
+  comment     String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([algorithmId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diseaseId String
+  disease   Disease  @relation(fields: [diseaseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, diseaseId])
+  @@index([diseaseId])
+}
+
+model MediaFile {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  url        String
+  mimeType   String
+  sizeBytes  Int
+  uploadedBy String
+  uploader   User     @relation("UploadedMediaFiles", fields: [uploadedBy], references: [id], onDelete: Restrict)
+  createdAt  DateTime @default(now())
+
+  @@index([uploadedBy])
+  @@index([mimeType])
+}
