@@ -2,7 +2,7 @@
 
 ## Railway backend
 
-Create a Railway PostgreSQL service and connect `DATABASE_URL` to the backend service.
+Use either Railway PostgreSQL or Supabase PostgreSQL for `DATABASE_URL`. If using Supabase, follow `docs/deploy/supabase.md`.
 
 Required Railway variables:
 
@@ -18,6 +18,8 @@ JWT_SECRET=replace-with-strong-secret
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=replace-with-service-role-key
 SUPABASE_STORAGE_BUCKET=media
+SUPABASE_STORAGE_PUBLIC=true
+SUPABASE_STORAGE_MAX_FILE_SIZE_BYTES=10485760
 WEB_URL=https://www.residente.app
 MERCADOPAGO_ACCESS_TOKEN=replace-with-mercadopago-token
 MERCADOPAGO_WEBHOOK_URL=https://<railway-backend-domain>/api/billing/webhook/mercadopago
