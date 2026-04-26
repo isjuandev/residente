@@ -190,7 +190,9 @@ class _AlgorithmFeedback extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    rating == 'USEFUL' ? '¿Qué fue útil?' : '¿Qué podemos mejorar?',
+                    rating == 'USEFUL'
+                        ? '¿Qué fue útil?'
+                        : '¿Qué podemos mejorar?',
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
@@ -228,13 +230,16 @@ class _AlgorithmFeedback extends ConsumerWidget {
                   FilledButton(
                     onPressed: () async {
                       try {
-                        await ref.read(diseasesRepositoryProvider).submitFeedback(
+                        await ref
+                            .read(diseasesRepositoryProvider)
+                            .submitFeedback(
                               slug: slug,
                               rating: rating,
                               reasons: selectedReasons.toList(),
                               comment: commentController.text,
                             );
-                        if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+                        if (sheetContext.mounted)
+                          Navigator.of(sheetContext).pop();
                         if (context.mounted) {
                           showAppSnackBar(context, 'Gracias por tu feedback');
                         }
@@ -297,7 +302,7 @@ class _AlgorithmFeedback extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: reason,
+                    initialValue: reason,
                     items: reasons
                         .map(
                           (item) => DropdownMenuItem(
@@ -340,7 +345,8 @@ class _AlgorithmFeedback extends ConsumerWidget {
                               reason: reason,
                               comment: commentController.text,
                             );
-                        if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+                        if (sheetContext.mounted)
+                          Navigator.of(sheetContext).pop();
                         if (context.mounted) {
                           showAppSnackBar(context, 'Reporte enviado');
                         }
